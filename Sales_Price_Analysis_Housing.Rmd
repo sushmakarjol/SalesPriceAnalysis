@@ -1,0 +1,411 @@
+---
+title: 'Sales Price Analysis of AmesHousing - EDA & Regression Diagnostics'
+author: "Sushma Karjol, Northeastern University"
+output: html_notebook
+---
+<left>
+<B><font size=4, color="green">Intermediate Analytics</font>
+</I></B></left>
+
+<B><font size=5, color="#891111">Introduction</font></B>
+
+  The dataset Ames Housing has been downloaded. This dataset consists of information about housing properties. It has details on property location, architect style, year built, house utilities, and house amenities and features. Based on the above parameters Sales price of the property differs and the pricing pattern of various years has also been provided. The goal of the work is to generate a statistical model to know which of these factors have more impact on the variation of the sales price.
+
+```{r}
+
+library(readr)
+AmesHousing <- read_csv("AmesHousing.csv")
+print(AmesHousing)
+
+
+```
+```{r}
+# loading required libraries
+library("tidyverse")
+library("funModeling")
+library("Hmisc")
+library("skimr")
+library("devtools")
+library("visdat")
+
+
+```
+
+
+##### Q2 <> Perform Exploratory Data Analysis and use descriptive statistics to describe the data.
+
+A2 <> Exploratory Data Analysis: It is about gaining insight into the number of categorical data and numerical data in the dataset.
+
+  Several functions are run on the current dataset to understand the features.
+  As per the below information, by using the skim function, it was understood that the dataset has 2930 rows and 82 Columns. There are 42-character variables, 39 numeric variables with 1 logical datatype. On the other hand, skim () also pulls the number of missing values for each category. Accordingly, 14 categorical columns have missing values, there are around 11 numerical columns that have missing values, and one logical variable has missing values. Along with this information, it also provides the minimum and maximum for categorical variables, the mean and standard deviation for numerical datatypes, which are the descriptive statistic.The histogram helps to assume that the variables are normally distributed, and many are skewed to the right.
+    The sales price is the dependent variable, and the rest are considered as the independent variable concerning Sale Price. The Sales price has a mean of 181000$ with a standard deviation of 79887. Sales price value ranges from 12789$ to 755000$.
+  
+  
+```{r}
+ameshousing <- function(AmesHousing)
+{   skim(AmesHousing)
+    vis_dat(AmesHousing)
+    
+}
+
+ ameshousing(AmesHousing)
+ 
+ 
+
+```
+
+
+
+```{r}
+# more information of Saleprice  as a dependent variable
+freq(AmesHousing$SalePrice)
+
+```
+
+
+```{r}
+# Adding mean of the column to the missing values, for only numerical variables.
+
+ameshousing_rm_mean  <- function(AmesHousing)
+{   AmesHousing$`Lot Frontage`[is.na(AmesHousing$`Lot Frontage`)]<-mean(AmesHousing$`Lot Frontage`,na.rm=TRUE)
+
+
+AmesHousing$`BsmtFin SF 1`[is.na(AmesHousing$`BsmtFin SF 1`)]<-mean(AmesHousing$`BsmtFin SF 1`,na.rm=TRUE)
+AmesHousing$`BsmtFin SF 2`[is.na(AmesHousing$`BsmtFin SF 2`)]<-mean(AmesHousing$`BsmtFin SF 2`,na.rm=TRUE)
+AmesHousing$`Bsmt Unf SF`[is.na(AmesHousing$`Bsmt Unf SF`)]<-mean(AmesHousing$`Bsmt Unf SF` ,na.rm=TRUE)
+AmesHousing$`Total Bsmt SF`[is.na(AmesHousing$`Total Bsmt SF`)]<-mean(AmesHousing$`Total Bsmt SF` ,na.rm=TRUE)
+
+AmesHousing$`Garage Cars`[is.na(AmesHousing$`Garage Yr Blt`)]<-mean(AmesHousing$`Garage Cars` ,na.rm=TRUE)
+
+AmesHousing$`Garage Area`[is.na(AmesHousing$`Garage Area`)]<-mean(AmesHousing$`Garage Area` ,na.rm=TRUE)
+
+}
+
+```
+
+#### 4) Using the "cor()" function to produce a correlation matrix of the numeric values.
+
+```{r}
+
+ames_cor <- AmesHousing %>% select(`Lot Frontage`,`Lot Area`,`BsmtFin SF 1`,`BsmtFin SF 2`,`Mas Vnr Area`,`Bsmt Unf SF`,`Total Bsmt SF`,`1st Flr SF`,`2nd Flr SF`,`Low Qual Fin SF`,`Gr Liv Area`,`Garage Area`,`Wood Deck SF`,`Open Porch SF`,`Enclosed Porch`,`3Ssn Porch`,`Screen Porch`,`Pool Area`,`Misc Val`,SalePrice)
+
+cor(ames_cor)
+correlation_table <- cor(ames_cor)
+correlation_table
+
+round(correlation_table,2)
+
+
+  
+
+```
+   Sales price has the highest correlation with ‘Above grade (ground) living area square feet (Gr Liv Area) ‘ and lowest correlation of 0.01 with Type 2 finished square feet set ( ‘BsmtFin SF 2’). And Masonry veneer area in square feet (Mas Vnr Area) correlates nearer 0.43 which is nearer to 0.50.
+ 
+
+
+
+
+#### 5) Produce a plot of the correlation matrix, and explain how to interpret it. (hint - check the corrplot or ggcorrplot plot libraries)
+
+```{r}
+
+library(corrplot)
+
+
+corrplot(correlation_table, method = "pie", cexRow =5)
+
+corrplot(correlation_table, order = "hclust", addrect = 2, col = terrain.colors(100))
+
+
+```
+   The first co-relation matrix with the pie shape, helps the analyst to visualize which independent variables have higher correlation value in comparison with other variables.The greater the area of pie in blue has stronger correlation
+   
+   From the above second co-relation matrix, it could be observed that 4th to 13th set of variables have higher correlation while the second set of variables have a minimal correlation with each other.
+
+
+#### Q6) Make a scatter plot for the X continuous variable with the highest correlation with Sale Price. Do the same for the X variable that has the lowest correlation with Sale Price. Finally, make a scatter plot between X and Sale Price with the correlation closest to 0.5. Interpret the scatter plots and describe how the patterns differ.
+
+      The Sales price has the highest correlation with ‘Above grade (ground) living area square feet (Gr Liv Area) ‘ and the lowest correlation of 0.01 with Type 2 finished square feet set ( ‘BsmtFin SF 2’). And Masonry veneer area in square feet ( ‘Mas Vnr Area`’), which correlates closer to 0.51.
+
+```{r}
+ggplot(AmesHousing, aes(x=SalePrice, y = `Gr Liv Area`, color =`Gr Liv Area`, )) +
+  geom_point() + 
+  geom_smooth(method=lm) + ggtitle("Slaesprice Vs Gr Liv Area")
+```
+      In the above scatter plot, Sales price is plotted against Above grade (ground) living area square feet (Gr Liv Area). They have a positive slope with very few outliers. And most of the values fall within 1000-3000 range of y-axis. The scatter looks strong linear relationship with upward movement. Thus, the rate of change of Salesprice is 0.71  with every increment of  value in Gr Liv Area.
+
+
+```{r}
+
+ggplot(AmesHousing, aes(x=SalePrice, y=`BsmtFin SF 2`, color= `BsmtFin SF 2`, )) +
+  geom_point() + 
+  geom_smooth(method=lm)+  ggtitle("Slaesprice Vs BsmtFin SF 2 ")
+
+```
+
+     In the above scatter plot, the Sales price is plotted against the Type 2 finished square feet set ( ‘BsmtFin SF 2’. This has the least correlation with Salesprice. For every unit of 1, the rate of change of sales price is 0.01, which is negligible. The steep slope is missing with the mostly vertical cluster. And most of the values fall within the 0 -700 range of the y-axis.
+
+
+```{r}
+ggplot(AmesHousing, aes(x=SalePrice, y=AmesHousing$`Mas Vnr Area`, color=AmesHousing$`Mas Vnr Area`)) +
+  geom_point() + 
+  geom_smooth(method=lm) + ggtitle("Slaesprice Vs Mas Vnr Area ")
+```
+   In this last scatter plot, the Sales price is plotted against the Masonry veneer area in square feet ( ‘Mas Vnr Area`’), which correlates closer to 0.51.  There is a positive slope, which is linear. However, the y-intercept is not as steep as the first scatter plot. Many outliers could be observed in this visual.  The cluster is between 0 to 500.
+
+
+
+```{r}
+# paired scatter plot with all the variables together in one matrix.
+pairs(AmesHousing$SalePrice ~ AmesHousing$`Mas Vnr Area`+ AmesHousing$`BsmtFin SF 2` + AmesHousing$`Gr Liv Area`,col = "red" , pch = 1 , main = "Sales price with Mas Vnr Area, BsmtFin SF 2 and Gr Liv Area")
+
+```
+   In the above paired scattered plot, the first column gives us a better picture of how all the three independent variables form a different linear relationship with the dependent variable Salesprice along with outliers.
+
+
+#### Q7) Using at least 3 continuous variables, fit a regression model in R.
+
+```{r}
+
+Saleprice_fit <- lm(SalePrice ~  `Gr Liv Area` + `Mas Vnr Area` + `BsmtFin SF 2`, data = AmesHousing)
+summary(Saleprice_fit)
+
+library(jtools)
+
+summ(Saleprice_fit)
+
+```
+
+#### 8) Report the model in equation form and interpret each coefficient of the model in the context of this problem.
+
+
+   An equation to be drafted using three independent variables to analyze if these variables could be possible enough for observing patterns and look for predictions.
+  
+  Using the above lm function(7th Question), the coefficient of ‘Gr Liv Area’ intercepts sales price at 94.941, `Mas Vnr Area` at 118.311, and BsmtFin SF 2 at 9.920. Using these values, the equation of the linear regression can be.
+  
+   Salesprice = 25864.514 + 94.941( `Gr Liv Area) + 118.311(`Mas Vnr Area`) +9.920(BsmtFin SF 2)
+  According to this equation, the Salesprice rises by  94.941$ concerning Gr Liv Area, 118.311$ concerning `Mas Vnr Area, and a minimal rate increment of 9.920$ concerning BsmtFin SF 2.Since all have positive intercept the sales prices increases. As the last variable has an insignificant contribution it can be discarded from the equation.   
+
+
+        
+
+
+#### 9) Use the "plot()" function to plot your regression model. Interpret the four graphs that are produced.
+
+```{r}
+par(mfrow = c(2,2))
+plot(Saleprice_fit)
+
+```
+
+Among the four graphs above, the first graph plotted with Residuals Vs Fitted. This graph checks the linearity and non-linearity effects. There is no formation of the pattern,
+like a parabola, confirming linearity but heteroscedastic due to funnel shape of pattern with few outliers. 
+
+
+In the second quadrant, the QQ plot evaluates if the residuals are normally distributed. Accordingly, the points have to lie exactly on the line or nearer. In the above case, maximum points lie near the line, though at the beginning and the latter of the pattern several residuals deviate from the line. Though there is the possibility of normality, it’s tough to confirm.
+
+  The third visual is the Scale location plot, which identifies homoscedasticity and heteroscedasticity. It describes the spread of residuals along with the values of predictors. Accordingly, there shouldn’t be any noticeable pattern of standard errors implying normal distribution or homoscedasticity. But in the above pattern there is a cluster formation with pattern and thus indicative of heteroscedasticity.
+
+   The fourth graph is called Cook’s distance or, the plot with standardized residuals against the leverage. Here the importance is to check the influences of data points on the regression line. The Cook distance evaluation signifies the change when the outlier is deleted. In the above graph there are few outliers after the cook distance value indicating their influence on the model statistics and hence cannot be removed
+
+
+
+### Q10) Check your model for multicollinearity and report your findings. What steps would you take to correct multicollinearity if it exists?
+
+  To check if the multicollinearity exists in the model, a VIF function is tested for the model. If the model has greater  value than 10 , then its considered as 
+
+
+```{r}
+library(faraway)
+vif(Saleprice_fit)
+
+```
+   To check if multicollinearity exists in the model, a VIF function is tested for the model. If the model has a greater value than 10, then it considered as 
+
+According to the equation with 95% confidence interval, the continuous variables - Gr Liv Area (Above grade (ground) living area square feet) and `Mas Vnr Area` (Masonry veneer area in square feet), have a greater influence on the prediction of the model while the other variable `BsmtFin SF 2` (Type 2 finished square feet) has least influence on the prediction. Also, the p-value is less than 2.2e-16, which implies the model is significant.
+
+  For all the five independent variables the multicollinearity is less than value 5, hence the multicollinearity problem doesn’t exist. The problem exists if there had been a case where the values are greater than 10 for any of the variables. Then the variables with the higher value of VIF have to be removed from the equation.
+
+
+
+
+
+#### Q11) Check your model for outliers and report your findings. Should these observations be removed from the model?
+ 
+        
+```{r}
+library(ggplot2)
+ggplot(AmesHousing) +
+  aes(x = "", y = `Gr Liv Area` , title  ="Boxplot of Above grade (ground) living area square feet") +
+  geom_boxplot(fill = "#0c4c8a") + labs(title  ="Boxplot of Above grade (ground) living area square feet")
+  theme_minimal()
+```
+
+
+
+```{r}
+
+# extracting outlier and checking for min and max of those values.
+Gr_outlier <- boxplot.stats(AmesHousing$`Gr Liv Area`)$out
+
+
+min(Gr_outlier)
+
+max(Gr_outlier)
+paste("Min outlier value in Gr Liv Area is " ,min(Gr_outlier),  " and Maximum outlier value in Gr Liv Area is ", max(Gr_outlier))
+```
+
+
+
+```{r}
+library(ggplot2)
+ggplot(AmesHousing) +
+  aes(x = "", y = `Mas Vnr Area`) +
+  geom_boxplot(fill = "#0c4c8a") +labs(title  ="Boxplot of Masonry veneer area in square feet")
+  theme_minimal()
+
+```
+
+
+```{r}
+
+# extracting outlier and checking for min and max of those values.
+Mas_outlier <- boxplot.stats(AmesHousing$`Mas Vnr Area`)$out
+
+min(Mas_outlier)
+
+
+max(Mas_outlier)
+paste("Min outlier value in Mas Vnr Area is " ,min(Mas_outlier),  " and Maximum outlier value in Mas Vnr Area is ", max(Mas_outlier))
+```
+```{r}
+library(ggplot2)
+ggplot(AmesHousing) +
+  aes(x = "", y = `BsmtFin SF 2`) +
+  geom_boxplot(fill = "#0c4c8a") +labs(title  ="Boxplot of Type 2 finished square feet")
+  theme_minimal()
+```
+
+
+```{r}
+# extracting outlier and checking for min and max of those values.
+
+BsmtFin_Outlier <- boxplot.stats(AmesHousing$`BsmtFin SF 2`)$out
+min(BsmtFin_Outlier)
+
+max(BsmtFin_Outlier)
+paste("Min outlier value in Mas Vnr Area is " ,min(BsmtFin_Outlier),  " and Maximum outlier value in Mas Vnr Area is ", max(BsmtFin_Outlier))
+```
+  To look for outliers in the model, with three continuous variables, box plots are plotted for each independent variable. After plotting the observations, we can look that the range of outliers for all the variables. The range for ‘Gr Liv Area’ is between 2637 to 5642, for Mas Vnr Area is 408 to 1600 and BsmtFin SF 2 has an outlier range between 6 to 1526. 
+ 
+ Though the range of outliers is low for the independent variable ‘Gr Liv Area’, the outliers cannot be removed because they have a greater impact on the Sales price which can alter the statistical model. On the other hand, the two variables have a higher range of outliers which can change the Sales price of the property due to several other dependent variables or factors influencing the Salesprice related to these outliers. Hence, the correctness of the model may not improve, instead may reduce the efficacy, by removing outliers.
+
+#### Q12) Attempt to correct any issues that you have discovered in your model. Did your changes improve the model, why or why not?
+
+
+   
+   
+  Two variables within the dataset have greater intercept value while third '`BsmtFin SF 2' has a lower value.  Also the variable '`BsmtFin SF 2' has a higher range of outliers. To analyze if the efficiency of the model would increase a Forward selection method is run with and without the third variable. However, it did not have much impact on the AIC value which remained almost equal.
+    
+   
+```{r}
+step( lm (AmesHousing$SalePrice ~`Gr Liv Area`  + `Mas Vnr Area` + `BsmtFin SF 2` , data = AmesHousing),direction = "forward")
+
+step( lm (AmesHousing$SalePrice ~`Gr Liv Area`  + `Mas Vnr Area` , data = AmesHousing),direction = "forward")
+
+
+step( lm (AmesHousing$SalePrice ~  `Total Bsmt SF`+ `Garage Area` + `Gr Liv Area`  , data = AmesHousing),direction = "forward")
+
+```
+
+
+   
+   
+#### Q 13 > Use the all subsets regression method to identify the "best" model. State the preferred model in equation form.
+
+```{r}
+
+
+
+# Subset regression method to identify the best model
+library(leaps)
+best_model <- regsubsets(SalePrice ~ ., data = ames_cor, nvmax=3 )
+best_model
+reg.sum <- summary(best_model)
+reg.sum
+
+
+
+
+
+```
+
+   According to the above subset regression method the linear regression is optimal with four variables, and  this includes the  variables such as - Gr Liv Area,Total Bsmt SF and Garage Area`
+
+```{r}
+names(reg.sum)
+
+```
+
+#### 14) Compare the preferred model from step 13 with your model from step 12. How do they differ? Which model do you prefer and why?
+
+```{r}
+Saleprice_fit <- lm(SalePrice ~  `Gr Liv Area` + `Mas Vnr Area` + `BsmtFin SF 2`, data = AmesHousing)
+summary(Saleprice_fit)
+
+Model2 <- lm(SalePrice ~ `Gr Liv Area` + `Total Bsmt SF` + `Garage Area`, data = AmesHousing )
+Model2
+summary(Model2)
+
+
+
+```
+```{r}
+# Model 1 created for the study
+step( lm (AmesHousing$SalePrice ~`Gr Liv Area`  + `Mas Vnr Area` + `BsmtFin SF 2` , data = AmesHousing),direction = "both")
+
+
+# Model 2 , preferred model 
+step( lm (AmesHousing$SalePrice ~  `Total Bsmt SF`+ `Garage Area` + `Gr Liv Area`  , data = AmesHousing),direction = "both")
+
+````
+   Both the models are compared using the Stepwise selection method. The AIC value of the first equation is 63762.14 which is greater than the second equation AIC=62823.08. Thus the optimal model would be to choose with the three variables provided by the subset regression.
+
+<B><font size=2, color="green">
+
+Conclusion :
+
+     The linear regression model was created for the data set Ames Housing property to check which numerical values have a greater impact on increasing the Sale price. A model was created using three variables one which has high correlation, low correlation, and one which is nearer to the value 0.50. Linear assumptions were verified using plot function and box plot. Using the regsubsets function of Feature Selection Methods it was observed that the best model is efficient with four independent variables in the equation. The  'Above grade (ground) living area (square feet)  that is 'Gr Liv Area` has been the major component of the housing Sale price. Along with, Above ground living area people look for the Size of the garage in square feet and Total square feet of the basement area which promotes the property sales and thus the pricing.
+     
+</font></B>
+
+References :
+
+1) How to replace NA values in columns of an R data frame form the mean of that column?
+https://www.tutorialspoint.com/how-to-replace-na-values-in-columns-of-an-r-data-frame-form-the-mean-of-that-column
+
+2) ggplot2 scatter plots : Quick start guide - R software and data visualization
+
+http://www.sthda.com/english/wiki/ggplot2-scatter-plots-quick-start-guide-r-software-and-data-visualization
+
+3) An Introduction to corrplot Package
+https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
+
+4) Multiple (Linear) Regression
+ https://www.statmethods.net/stats/regression.html
+
+5) https://datascienceplus.com/multicollinearity-in-r/
+
+6)Stats and R
+ https://statsandr.com/blog/outliers-detection-in-r/
+
+7) Scatterplots in R
+     https://www.sheffield.ac.uk/polopoly_fs/1.536489!/file/MASH_Scatterplots_R_AO.pdf
+
+8) Assumptions of Linear Regression
+http://r-statistics.co/Assumptions-of-Linear-Regression.html
+
+9) Going Deeper into Regression Analysis with Assumptions, Plots & Solutions
+https://www.analyticsvidhya.com/blog/2016/07/deeper-regression-analysis-assumptions-plots-solutions/
+
+
