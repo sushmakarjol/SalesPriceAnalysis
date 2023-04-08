@@ -1,0 +1,7 @@
+# SalesPriceAnalysis
+
+Advanced data analysis techniques have been applied to this dataset to identify the key factors that influence the sale price of a house. 
+Part - One of this project includes EDA and Part Two includes the application of the statistical method  - Regression analysis, to estimate the 
+relationship between a dependent variable (in this case, the sale price of a house) and multiple independent variables (such as the size of the house, 
+the number of rooms, the neighborhood, etc.).The goal of regression analysis is to develop a model that can accurately predict the dependent variable 
+based on the available independent variables.
