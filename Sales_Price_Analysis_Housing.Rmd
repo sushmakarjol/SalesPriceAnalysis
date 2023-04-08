@@ -1,6 +1,6 @@
 ---
 title: 'Sales Price Analysis of AmesHousing - EDA & Regression Diagnostics'
-author: "Sushma Karjol, Northeastern University"
+author: "Sushma Karjol"
 output: html_notebook
 ---
 <left>
